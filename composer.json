@@ -18,6 +18,10 @@
         {
             "type": "composer",
             "url": "https://satis.mailcoach.app"
+        },
+        {
+            "type": "git",
+            "url": "git@github.com:blueoceanideas/laravel-mailcoach.git"
         }
     ],
     "require": {
@@ -25,13 +29,12 @@
         "php": "^7.4",
         "aws/aws-php-sns-message-validator": "^1.6",
         "illuminate/http": "^7.0",
-        "spatie/laravel-mailcoach": "^2.9",
+        "spatie/laravel-mailcoach": "dev-themosis-support as 2.13.0",
         "spatie/laravel-webhook-client": "^2.4"
     },
     "require-dev": {
         "fzaninotto/faker": "^1.9",
         "friendsofphp/php-cs-fixer": "^2.16",
-        "orchestra/testbench": "^5.0",
         "phpunit/phpunit": "^9.0",
         "symfony/var-dumper": "^5.0"
     },
