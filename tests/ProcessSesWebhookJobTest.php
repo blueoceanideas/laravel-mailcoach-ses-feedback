@@ -3,16 +3,19 @@
 namespace Spatie\MailcoachSesFeedback\Tests;
 
 use Carbon\Carbon;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Spatie\Mailcoach\Events\WebhookCallProcessedEvent;
 use Spatie\Mailcoach\Models\Send;
 use Spatie\Mailcoach\Models\SendFeedbackItem;
 use Spatie\MailcoachSesFeedback\ProcessSesWebhookJob;
 use Spatie\MailcoachSesFeedback\SesWebhookCall;
-use Spatie\WebhookClient\Models\WebhookCall;
+use Spatie\MailcoachSesFeedback\Tests\factories\SendFactory;
 
 class ProcessSesWebhookJobTest extends TestCase
 {
+    use RefreshDatabase;
+
     private SesWebhookCall $webhookCall;
 
     private Send $send;
@@ -23,10 +26,11 @@ class ProcessSesWebhookJobTest extends TestCase
 
         $this->webhookCall = SesWebhookCall::create([
             'name' => 'ses',
+            'external_id' => $this->getStub('bounceWebhookContent')['MessageId'],
             'payload' => $this->getStub('bounceWebhookContent'),
         ]);
 
-        $this->send = factory(Send::class)->create([
+        $this->send = (new SendFactory())->create([
             'transport_message_id' => '0107016eb1654604-5f27d09d-872f-4a34-be34-c4e24741cb66-000000',
         ]);
     }
@@ -85,11 +89,12 @@ class ProcessSesWebhookJobTest extends TestCase
     {
         $webhookCall = SesWebhookCall::create([
             'name' => 'ses',
+            'external_id' => $this->getStub('clickWebhookContent')['MessageId'],
             'payload' => $this->getStub('clickWebhookContent'),
         ]);
 
         /** @var Send $send */
-        $send = factory(Send::class)->create([
+        $send = (new SendFactory())->create([
             'transport_message_id' => '0107016eb14a6683-21d61476-4ac8-4eb2-aa71-79209c70e8a4-000000',
         ]);
         $send->campaign->update(['track_clicks' => true]);
@@ -104,11 +109,12 @@ class ProcessSesWebhookJobTest extends TestCase
     {
         $webhookCall = SesWebhookCall::create([
             'name' => 'ses',
+            'external_id' => $this->getStub('openWebhookContent')['MessageId'],
             'payload' => $this->getStub('openWebhookContent'),
         ]);
 
         /** @var Send $send */
-        $send = factory(Send::class)->create([
+        $send = (new SendFactory())->create([
             'transport_message_id' => '0107016eb143be75-4e95d17b-1251-4abe-b75f-f0eccf0c11ac-000000',
         ]);
         $send->campaign->update([
@@ -125,11 +131,12 @@ class ProcessSesWebhookJobTest extends TestCase
     {
         $webhookCall = SesWebhookCall::create([
             'name' => 'ses',
+            'external_id' => $this->getStub('complaintWebhookContent')['MessageId'],
             'payload' => $this->getStub('complaintWebhookContent'),
         ]);
 
         /** @var Send $send */
-        $send = factory(Send::class)->create([
+        $send = (new SendFactory())->create([
             'transport_message_id' => '0107016eb149cd22-7b2d056e-8298-4cb2-b716-d7d85935a752-000000',
         ]);
 
@@ -148,11 +155,12 @@ class ProcessSesWebhookJobTest extends TestCase
     {
         $webhookCall = SesWebhookCall::create([
             'name' => 'ses',
+            'external_id' => $this->getStub('clickWebhookContent')['MessageId'],
             'payload' => $this->getStub('clickWebhookContent'),
         ]);
 
         /** @var Send $send */
-        $send = factory(Send::class)->create([
+        $send = (new SendFactory())->create([
             'transport_message_id' => '0107016eb14a6683-21d61476-4ac8-4eb2-aa71-79209c70e8a4-000000',
         ]);
 
@@ -187,6 +195,7 @@ class ProcessSesWebhookJobTest extends TestCase
     {
         $webhookCallSecond = SesWebhookCall::create([
             'name' => 'ses',
+            'external_id' => $this->getStub('bounceWebhookContent')['MessageId'],
             'payload' => $this->getStub('bounceWebhookContent'),
         ]);
 
@@ -196,5 +205,4 @@ class ProcessSesWebhookJobTest extends TestCase
         $this->assertEquals(1, SendFeedbackItem::count());
         $this->assertEquals(1, SesWebhookCall::count());
     }
-
 }

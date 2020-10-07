@@ -2,6 +2,15 @@
 
 All notable changes to `laravel-mailcoach-ses-feedback` will be documented in this file
 
+## 2.3.0 - 2020-09-25
+
+- Tag a Mailcoach v3 compatible release
+- Use `external_id` for first message checking
+
+## 2.2.3 - 2020-09-08
+
+- add support for Laravel 8
+
 ## 2.2.2 - 2020-07-01
 
 - Use the configured app timezone for stored feedback
