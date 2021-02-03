@@ -9,14 +9,11 @@ use Illuminate\Support\Arr;
 use Spatie\Mailcoach\Events\WebhookCallProcessedEvent;
 use Spatie\Mailcoach\Models\Send;
 use Spatie\Mailcoach\Support\Config;
-use Spatie\Mailcoach\Traits\UsesMailcoachModels;
 use Spatie\WebhookClient\Models\WebhookCall;
 use Spatie\WebhookClient\ProcessWebhookJob;
 
 class ProcessSesWebhookJob extends ProcessWebhookJob
 {
-    use UsesMailcoachModels;
-
     public function __construct(WebhookCall $webhookCall)
     {
         parent::__construct($webhookCall);
@@ -49,9 +46,7 @@ class ProcessSesWebhookJob extends ProcessWebhookJob
         }
 
         /** @var \Spatie\Mailcoach\Models\Send $send */
-        $sendModelClass = $this->getSendClass();
-
-        $send = $sendModelClass::findByTransportMessageId($messageId);
+        $send = Send::findByTransportMessageId($messageId);
 
         if (!$send) {
             $this->markAsProcessed();
