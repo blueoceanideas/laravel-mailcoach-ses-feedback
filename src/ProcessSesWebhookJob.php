@@ -6,21 +6,24 @@ use Aws\Sns\Message;
 use Aws\Sns\MessageValidator;
 use Exception;
 use Illuminate\Support\Arr;
-use Spatie\Mailcoach\Events\WebhookCallProcessedEvent;
-use Spatie\Mailcoach\Models\Send;
+use Spatie\Mailcoach\Domain\Campaign\Events\WebhookCallProcessedEvent;
+use Spatie\Mailcoach\Domain\Shared\Models\Send;
+use Spatie\Mailcoach\Domain\Shared\Traits\UsesMailcoachModels;
+use Spatie\Mailcoach\Mailcoach;
+use Spatie\WebhookClient\Jobs\ProcessWebhookJob;
 use Spatie\WebhookClient\Models\WebhookCall;
-use Spatie\WebhookClient\ProcessWebhookJob;
-use Spatie\Mailcoach\Support\Config;
 
 class ProcessSesWebhookJob extends ProcessWebhookJob
 {
+    use UsesMailcoachModels;
+
     public function __construct(WebhookCall $webhookCall)
     {
         parent::__construct($webhookCall);
 
-        $this->queue = config('mailcoach.perform_on_queue.process_feedback_job');
+        $this->queue = config('mailcoach.campaigns.perform_on_queue.process_feedback_job');
 
-        $this->connection = $this->connection ?? Config::getQueueConnection();
+        $this->connection = $this->connection ?? Mailcoach::getQueueConnection();
     }
 
     public function handle()
@@ -39,18 +42,17 @@ class ProcessSesWebhookJob extends ProcessWebhookJob
 
         $payload = json_decode($this->webhookCall->payload['Message'], true);
 
-        if (!$messageId = Arr::get($payload, 'mail.messageId')) {
-            return;
-        }
+        $send = $this->getSendByMessageHeader($payload) ?? $this->getSendByMessageId($payload);
 
-        /** @var \Spatie\Mailcoach\Models\Send $send */
-        $send = Send::findByTransportMessageId($messageId);
+        if (! $send) {
+            $this->markAsProcessed();
 
-        if (!$send) {
             return;
         }
 
         if (! Arr::get($payload, 'eventType')) {
+            $this->markAsProcessed();
+
             return;
         }
 
@@ -58,19 +60,56 @@ class ProcessSesWebhookJob extends ProcessWebhookJob
 
         $sesEvent->handle($send);
 
+        $this->markAsProcessed();
+    }
+
+    protected function markAsProcessed(): void
+    {
         event(new WebhookCallProcessedEvent($this->webhookCall));
     }
 
     protected function validateMessageFromWebhookCall(): bool
     {
-        $validator = new MessageValidator();
+        $validator = resolve(MessageValidator::class);
 
         try {
             $message = Message::fromJsonString(json_encode($this->webhookCall->payload));
-        } catch (Exception $exception) {
+        } catch (Exception) {
             return false;
         }
 
         return $validator->isValid($message);
+    }
+
+    protected function getSendByMessageHeader(?array $payload): ?Send
+    {
+        if (! $payload) {
+            return null;
+        }
+
+        $headers = Arr::get($payload, 'mail.headers', []);
+
+        foreach ($headers as $header) {
+            if ($header['name'] === 'Message-ID') {
+                $messageId = (string)str($header['value'])->between('<', '>');
+
+                return self::getSendClass()::findByTransportMessageId($messageId);
+            }
+        }
+
+        return null;
+    }
+
+    protected function getSendByMessageId(?array $payload): ?Send
+    {
+        if (! $payload) {
+            return null;
+        }
+
+        if (! $messageId = $payload['mail']['messageId'] ?? null) {
+            return null;
+        }
+
+        return self::getSendClass()::findByTransportMessageId($messageId);
     }
 }

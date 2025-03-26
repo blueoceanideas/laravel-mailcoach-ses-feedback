@@ -13,17 +13,18 @@ class SesWebhookCall extends WebhookCall
 
     public static function storeWebhook(WebhookConfig $config, Request $request): WebhookCall
     {
-        $message = Message::fromRawPostData();
+        $message = Message::fromJsonString((string) $request->getContent());
 
         return self::create([
             'name' => $config->name,
+            'external_id' => $message->toArray()['MessageId'],
             'payload' => $message->toArray(),
         ]);
     }
 
     public function isFirstOfThisSesMessage(): bool
     {
-        $firstMessageId = (int) SesWebhookCall::where('payload->MessageId', $this->payload['MessageId'])->min('id');
+        $firstMessageId = (int) SesWebhookCall::where('external_id', $this->payload['MessageId'])->min('id');
 
         return $this->id === $firstMessageId;
     }

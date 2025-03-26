@@ -8,10 +8,6 @@ class AddConfigurationSetHeader
 {
     public function handle(MessageSending $event)
     {
-        if (! config('mail.driver') === 'ses') {
-            return;
-        }
-
         if (! $configuration_set = config('mailcoach.ses_feedback.configuration_set')) {
             return;
         }
@@ -20,7 +16,7 @@ class AddConfigurationSetHeader
             return;
         }
 
-        $event->message->getHeaders()->removeAll('X-SES-CONFIGURATION-SET');
+        $event->message->getHeaders()->remove('X-SES-CONFIGURATION-SET');
         $event->message->getHeaders()->addTextHeader('X-SES-CONFIGURATION-SET', $configuration_set);
     }
 }

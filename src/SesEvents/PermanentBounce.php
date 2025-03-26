@@ -2,7 +2,8 @@
 
 namespace Spatie\MailcoachSesFeedback\SesEvents;
 
-use Spatie\Mailcoach\Models\Send;
+use Spatie\Mailcoach\Domain\Shared\Models\Send;
+use Spatie\MailcoachSesFeedback\Enums\BounceType;
 
 class PermanentBounce extends SesEvent
 {
@@ -12,7 +13,7 @@ class PermanentBounce extends SesEvent
             return false;
         }
 
-        if ($this->payload['bounce']['bounceType'] !== 'Permanent') {
+        if ($this->payload['bounce']['bounceType'] !== BounceType::Permanent->value) {
             return false;
         }
 

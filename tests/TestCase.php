@@ -2,12 +2,17 @@
 
 namespace Spatie\MailcoachSesFeedback\Tests;
 
-use CreateMailcoachTables;
-use CreateWebhookCallsTable;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
+use Livewire\LivewireServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
-use Spatie\BladeX\BladeXServiceProvider;
 use Spatie\Mailcoach\MailcoachServiceProvider;
+use Spatie\MailcoachEditor\MailcoachEditorServiceProvider;
+use Spatie\MailcoachMailgunFeedback\MailcoachMailgunFeedbackServiceProvider;
+use Spatie\MailcoachPostmarkFeedback\MailcoachPostmarkFeedbackServiceProvider;
+use Spatie\MailcoachSendgridFeedback\MailcoachSendgridFeedbackServiceProvider;
+use Spatie\MailcoachSendinblueFeedback\MailcoachSendinblueFeedbackServiceProvider;
 use Spatie\MailcoachSesFeedback\MailcoachSesFeedbackServiceProvider;
 
 class TestCase extends Orchestra
@@ -16,7 +21,9 @@ class TestCase extends Orchestra
     {
         parent::setUp();
 
-        $this->withFactories(__DIR__ . '/../vendor/spatie/laravel-mailcoach/database/factories');
+        Factory::guessFactoryNamesUsing(
+            fn (string $modelName) => 'Spatie\\Mailcoach\\Database\\Factories\\'.class_basename($modelName).'Factory'
+        );
 
         Route::mailcoach('mailcoach');
 
@@ -26,8 +33,14 @@ class TestCase extends Orchestra
     protected function getPackageProviders($app)
     {
         return [
-            MailcoachServiceProvider::class,
+            LivewireServiceProvider::class,
+            MailcoachMailgunFeedbackServiceProvider::class,
             MailcoachSesFeedbackServiceProvider::class,
+            MailcoachSendgridFeedbackServiceProvider::class,
+            MailcoachPostmarkFeedbackServiceProvider::class,
+            MailcoachSendinblueFeedbackServiceProvider::class,
+            MailcoachEditorServiceProvider::class,
+            MailcoachServiceProvider::class,
         ];
     }
 
@@ -45,11 +58,15 @@ class TestCase extends Orchestra
 
     protected function setUpDatabase()
     {
-        include_once __DIR__ . '/../vendor/spatie/laravel-webhook-client/database/migrations/create_webhook_calls_table.php.stub';
-        (new CreateWebhookCallsTable())->up();
+        if (! Schema::hasTable('webhook_calls')) {
+            $createWebhookCalls = require __DIR__.'/../../../vendor/spatie/laravel-mailcoach/database/migrations/create_webhook_calls_table.php';
+            $createWebhookCalls->up();
+        }
 
-        include_once __DIR__ . '/../vendor/spatie/laravel-mailcoach/database/migrations/create_mailcoach_tables.php.stub';
-        (new CreateMailcoachTables())->up();
+        if (! Schema::hasTable('mailcoach_campaigns')) {
+            $createMailcoachTables = require __DIR__.'/../../../vendor/spatie/laravel-mailcoach/database/migrations/create_mailcoach_tables.php';
+            $createMailcoachTables->up();
+        }
     }
 
     public function getStub(string $name): array

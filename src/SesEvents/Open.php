@@ -2,7 +2,7 @@
 
 namespace Spatie\MailcoachSesFeedback\SesEvents;
 
-use Spatie\Mailcoach\Models\Send;
+use Spatie\Mailcoach\Domain\Shared\Models\Send;
 
 class Open extends SesEvent
 {
@@ -13,10 +13,6 @@ class Open extends SesEvent
 
     public function handle(Send $send)
     {
-        if (! $send->campaign->track_opens) {
-            return;
-        }
-
         $send->registerOpen($this->getTimestamp());
     }
 }
